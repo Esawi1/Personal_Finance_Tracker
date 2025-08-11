@@ -64,12 +64,6 @@ pip install -r requirements.txt
 3️⃣ Apply migrations & create a superuser
 bash
 Copy
-
-## Screenshots
-
-![Dashboard Screenshot](https://drive.google.com/uc?export=view&id=1qU_uJh-VSagNeaMKE52qx-gQpXUU6k4y)
-
-
 Edit
 python manage.py migrate
 python manage.py createsuperuser
@@ -79,3 +73,9 @@ bash
 Copy
 Edit
 python manage.py runserver
+
+## Screenshots
+
+![Dashboard Screenshot](https://drive.google.com/uc?export=view&id=1qU_uJh-VSagNeaMKE52qx-gQpXUU6k4y)
+
+
