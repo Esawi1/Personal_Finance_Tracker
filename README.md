@@ -67,10 +67,8 @@ Copy
 
 ## Screenshots
 
-![Dashboard](images/screenshot.png)
-<p align="center">
-  <img src="images/screenshot.png" width="800" alt="Dashboard">
-</p>
+![Dashboard](screenshot.png)
+
 
 Edit
 python manage.py migrate
