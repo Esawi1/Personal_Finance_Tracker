@@ -64,6 +64,14 @@ pip install -r requirements.txt
 3️⃣ Apply migrations & create a superuser
 bash
 Copy
+
+## Screenshots
+
+![Dashboard](images/screenshot.png)
+<p align="center">
+  <img src="images/screenshot.png" width="800" alt="Dashboard">
+</p>
+
 Edit
 python manage.py migrate
 python manage.py createsuperuser
