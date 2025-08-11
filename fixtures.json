@@ -1,0 +1,118 @@
+[
+    {
+      "model": "auth.user",
+      "pk": 1,
+      "fields": {
+        "username": "testuser",
+        "password": "pbkdf2_sha256$390000$Hh0nF1jXk3bXniM8NUyLSp$1VmTw5ZrINJf/o5f7t4uJqgR1DPaEXprX/dl4B3KZtA=",
+        "is_superuser": false,
+        "is_staff": false,
+        "is_active": true
+      }
+    },
+    {
+      "model": "core.account",
+      "pk": 1,
+      "fields": {
+        "owner": 1,
+        "name": "Main Account",
+        "balance": "2000.00"
+      }
+    },
+    {
+      "model": "core.category",
+      "pk": 1,
+      "fields": { "owner": 1, "name": "Salary" }
+    },
+    {
+      "model": "core.category",
+      "pk": 2,
+      "fields": { "owner": 1, "name": "Rent" }
+    },
+    {
+      "model": "core.category",
+      "pk": 3,
+      "fields": { "owner": 1, "name": "Groceries" }
+    },
+    {
+      "model": "core.category",
+      "pk": 4,
+      "fields": { "owner": 1, "name": "Transport" }
+    },
+    {
+      "model": "core.transaction",
+      "pk": 1,
+      "fields": {
+        "owner": 1,
+        "account": 1,
+        "category": 1,
+        "amount": "2500.00",
+        "date": "2025-08-01"
+      }
+    },
+    {
+      "model": "core.transaction",
+      "pk": 2,
+      "fields": {
+        "owner": 1,
+        "account": 1,
+        "category": 2,
+        "amount": "-1000.00",
+        "date": "2025-08-05"
+      }
+    },
+    {
+      "model": "core.transaction",
+      "pk": 3,
+      "fields": {
+        "owner": 1,
+        "account": 1,
+        "category": 3,
+        "amount": "-300.00",
+        "date": "2025-08-07"
+      }
+    },
+    {
+      "model": "core.transaction",
+      "pk": 4,
+      "fields": {
+        "owner": 1,
+        "account": 1,
+        "category": 4,
+        "amount": "-150.00",
+        "date": "2025-08-10"
+      }
+    },
+    {
+      "model": "core.transaction",
+      "pk": 5,
+      "fields": {
+        "owner": 1,
+        "account": 1,
+        "category": 3,
+        "amount": "-200.00",
+        "date": "2025-08-15"
+      }
+    },
+    {
+      "model": "core.transaction",
+      "pk": 6,
+      "fields": {
+        "owner": 1,
+        "account": 1,
+        "category": 1,
+        "amount": "1000.00",
+        "date": "2025-08-20"
+      }
+    },
+    {
+      "model": "core.budget",
+      "pk": 1,
+      "fields": {
+        "owner": 1,
+        "month": "2025-08-01",
+        "total_limit": "3000.00"
+      }
+    }
+  ]
+  

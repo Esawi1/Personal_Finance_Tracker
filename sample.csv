@@ -1,0 +1,7 @@
+date,amount,description,category,type,account,currency
+2025-08-01,2500,Salary August,Salary,INCOME,Main Account,USD
+2025-08-05,-1000,Rent August,Rent,EXPENSE,Main Account,USD
+2025-08-07,-300,Groceries Week 1,Groceries,EXPENSE,Main Account,USD
+2025-08-10,-150,Fuel,Transport,EXPENSE,Main Account,USD
+2025-08-15,-200,Groceries Week 2,Groceries,EXPENSE,Main Account,USD
+2025-08-20,1000,Freelance Project,Salary,INCOME,Main Account,USD

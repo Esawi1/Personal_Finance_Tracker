@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Finance Tracker — Dashboard</title>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    ::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:6px}
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-indigo-600 text-white grid place-items-center font-bold">FT</div>
+        <h1 class="text-lg sm:text-xl font-semibold">Finance Tracker</h1>
+        <span id="welcome" class="hidden sm:inline text-sm text-slate-500 ml-3"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <input id="month" type="month" class="rounded-xl border-slate-300 px-3 py-2 text-sm" />
+        <button id="loadBtn" class="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm hover:bg-indigo-700">Refresh</button>
+        <button id="logoutBtn" class="rounded-xl border px-3 py-2 text-sm hover:bg-slate-100">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Status / login -->
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <div id="status" class="text-sm text-slate-600">Using mock data. Log in to load from API.</div>
+      <div class="ml-auto flex items-center gap-2">
+        <input id="user" placeholder="username" class="rounded-lg border px-2 py-1 text-sm" autocomplete="username">
+        <input id="pass" placeholder="password" type="password" class="rounded-lg border px-2 py-1 text-sm" autocomplete="current-password">
+        <button id="loginBtn" class="rounded-lg border px-3 py-1 text-sm hover:bg-slate-100">Log in</button>
+      </div>
+    </div>
+
+    <!-- Top cards -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-2xl shadow-sm p-5">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Balance</p>
+        <p id="card-balance" class="text-2xl font-semibold mt-1">—</p>
+        <p id="card-balance-delta" class="text-xs mt-2 text-slate-500">—</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm p-5">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Income</p>
+        <p id="card-income" class="text-2xl font-semibold mt-1 text-emerald-600">—</p>
+        <p id="card-income-count" class="text-xs mt-2 text-slate-500">—</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm p-5">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Expenses</p>
+        <p id="card-expense" class="text-2xl font-semibold mt-1 text-rose-600">—</p>
+        <p id="card-expense-count" class="text-xs mt-2 text-slate-500">—</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm p-5">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Budget Used</p>
+        <div class="mt-3">
+          <div class="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+            <div id="budget-bar" class="h-2 bg-indigo-600" style="width:0%"></div>
+          </div>
+          <p id="budget-text" class="text-xs mt-2 text-slate-600">—</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts + Table -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div class="bg-white rounded-2xl shadow-sm p-5 lg:col-span-2">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-semibold">Income vs Expense</h2>
+        </div>
+        <canvas id="lineChart" height="120"></canvas>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm p-5">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-semibold">By Category</h2>
+        </div>
+        <canvas id="pieChart" height="120"></canvas>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-2xl shadow-sm p-5">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="font-semibold">Recent Transactions</h2>
+        <div class="flex items-center gap-3">
+          <a id="exportBtn" class="text-sm text-indigo-600 hover:underline" href="#">Export CSV</a>
+        </div>
+      </div>
+      <div class="overflow-auto">
+        <table class="min-w-full text-sm">
+          <thead class="text-left text-slate-500 border-b">
+            <tr><th class="py-2">Date</th><th class="py-2">Description</th><th class="py-2">Category</th><th class="py-2 text-right">Amount</th></tr>
+          </thead>
+          <tbody id="txTable"></tbody>
+        </table>
+        <p id="emptyTable" class="hidden text-sm text-slate-500 mt-3">No transactions found for this range.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ========= CONFIG =========
+    let USE_MOCK = false; // use API when you have a token
+
+    // ========= HELPERS =========
+    const fmt = n => Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+    function setDefaultMonth(){
+      const m = document.getElementById('month');
+      if (!m.value) {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        m.value = `${yyyy}-${mm}`;
+      }
+    }
+    function setStatus(text, ok=true){
+      const el = document.getElementById('status');
+      el.textContent = text;
+      el.className = `text-sm ${ok?'text-slate-600':'text-rose-600'}`;
+    }
+    const accessToken = () => localStorage.getItem('access');
+
+    // ========= API CALLS (JWT only, no cookies) =========
+    async function apiLogin(u,p){
+      const res = await fetch('/api/token/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username:u, password:p}),
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      if(!res.ok) throw new Error('login failed');
+      const data = await res.json();
+      localStorage.removeItem('access');
+      localStorage.setItem('access', data.access);
+      return data.access;
+    }
+
+    async function apiMe(){
+      // Safe: If you didn’t add /api/me/, this will just fail silently.
+      try{
+        const res = await fetch('/api/me/', {
+          headers: {'Authorization': `Bearer ${accessToken()}`},
+          cache: 'no-store',
+          credentials: 'omit'
+        });
+        if (!res.ok) return null;
+        return res.json();
+      }catch{ return null; }
+    }
+
+    async function apiMonthlySummary(month){
+      const res = await fetch(`/api/transactions/monthly_summary?month=${month}`, {
+        headers: {'Authorization': `Bearer ${accessToken()}`},
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      if(res.status === 401) throw new Error('unauthorized');
+      if(!res.ok) throw new Error('summary fetch failed');
+      return res.json();
+    }
+
+    async function apiCards(month){
+      const res = await fetch(`/api/summary/cards?month=${month}`, {
+        headers: {'Authorization': `Bearer ${accessToken()}`},
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      if(res.status === 401) throw new Error('unauthorized');
+      if(!res.ok) throw new Error('cards fetch failed');
+      return res.json();
+    }
+
+    async function apiRecentTransactions(){
+      const res = await fetch(`/api/transactions/?page_size=10`, {
+        headers: {'Authorization': `Bearer ${accessToken()}`},
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      if(res.status === 401) throw new Error('unauthorized');
+      if(!res.ok) throw new Error('transactions fetch failed');
+      const data = await res.json();
+      return data.results || data;
+    }
+
+    // ========= RENDER =========
+    let pie, line;
+
+    function renderCards(cards){
+      const income = Number(cards.income||0);
+      const expense = Number(cards.expense||0);
+      const balance = Number(cards.balance||0);
+
+      document.getElementById('card-balance').textContent = `$${fmt(balance)}`;
+      document.getElementById('card-income').textContent  = `$${fmt(income)}`;
+      document.getElementById('card-expense').textContent = `$${fmt(expense)}`;
+
+      document.getElementById('card-income-count').textContent  = `Net: $${fmt(income)}`;
+      document.getElementById('card-expense-count').textContent = `Spent this month`;
+      document.getElementById('card-balance-delta').textContent = balance >= 0 ? 'You’re on track ✅' : 'Over budget ⚠️';
+
+      // Budget
+      const limit = cards.budget?.limit || 0;
+      const used  = cards.budget?.used  || 0;
+      const pct   = cards.budget?.pct   || (limit>0 ? Math.min(100, Math.round((used/limit)*100)) : 0);
+      document.getElementById('budget-bar').style.width = pct + '%';
+      document.getElementById('budget-text').textContent = limit
+        ? `Used $${fmt(used)} of $${fmt(limit)} (${pct}%)`
+        : 'No budget set for this month';
+    }
+
+    // uses category colors from API (category__color)
+    function renderPie(summary){
+      const src = summary.by_category || [];
+      const labels = src.map(x=>x.category__name || 'Uncategorized');
+      const values = src.map(x=>Math.abs(Number(x.total||0)));
+      const colors = src.map(x=>x.category__color || '#4f46e5');
+      if (pie) pie.destroy();
+      pie = new Chart(document.getElementById('pieChart'), {
+        type: 'pie',
+        data: { labels, datasets: [{ data: values, backgroundColor: colors }] }
+      });
+    }
+
+    function renderLine(summary, month){
+      const days = Array.from({length:31}, (_,i)=>String(i+1).padStart(2,'0'));
+      const daily = summary.daily || [];
+      const incomeMap = Object.fromEntries(daily.map(d=>[d.day, Number(d.income||0)]));
+      const expenseMap = Object.fromEntries(daily.map(d=>[d.day, Number(d.expense||0)]));
+      const incomeData = days.map(d => incomeMap[d] || 0);
+      const expenseData = days.map(d => expenseMap[d] || 0);
+
+      if (line) line.destroy();
+      line = new Chart(document.getElementById('lineChart'), {
+        type: 'line',
+        data: {
+          labels: days.map(d => `${month}-${d}`),
+          datasets: [
+            { label: 'Income', data: incomeData },
+            { label: 'Expense', data: expenseData }
+          ]
+        }
+      });
+    }
+
+    function renderTable(rows){
+      const tbody = document.getElementById('txTable');
+      const empty = document.getElementById('emptyTable');
+      tbody.innerHTML = '';
+      if (!rows || rows.length === 0){
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      rows.forEach(r=>{
+        const tr = document.createElement('tr');
+        tr.className = "border-b last:border-0";
+        const amt = Number(r.amount||0);
+        tr.innerHTML = `
+          <td class="py-2 pr-4">${r.date||''}</td>
+          <td class="py-2 pr-4">${r.desc || r.description || ''}</td>
+          <td class="py-2 pr-4">${r.category_name || r.category || ''}</td>
+          <td class="py-2 text-right ${amt<0?'text-rose-600':'text-emerald-600'}">${amt<0?'-':'+'}$${fmt(Math.abs(amt))}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ========= FLOW =========
+    async function loadData(){
+      const month = document.getElementById('month').value;
+      try{
+        if (USE_MOCK){
+          setStatus('Using mock data.', true);
+          return;
+        }
+        const [me, cards, summary, txs] = await Promise.all([
+          apiMe(),                  // optional; shows name if available
+          apiCards(month),
+          apiMonthlySummary(month),
+          apiRecentTransactions()
+        ]);
+        if (me && me.username) {
+          const w = document.getElementById('welcome');
+          w.textContent = `Welcome, ${me.username}`;
+          w.classList.remove('hidden');
+        }
+        renderCards(cards);
+        renderPie(summary);
+        renderLine(summary, month);
+        renderTable(txs);
+        setStatus('Loaded from API.', true);
+      }catch(e){
+        console.error(e);
+        if (String(e).includes('unauthorized')){
+          localStorage.removeItem('access');
+          setStatus('Session expired. Please log in again.', false);
+        } else {
+          setStatus('Failed to load data. Check API / token.', false);
+        }
+      }
+    }
+
+    async function login(){
+      try{
+        const u = document.getElementById('user').value.trim();
+        const p = document.getElementById('pass').value;
+        await apiLogin(u, p);
+        USE_MOCK = false;
+        await loadData();
+      } catch (e) {
+        setStatus('Login failed. Check your username/password.', false);
+      }
+    }
+
+    function logout(){
+      localStorage.removeItem('access');
+      USE_MOCK = true;
+      document.getElementById('welcome').classList.add('hidden');
+      setStatus('Logged out. Using mock data.', true);
+    }
+
+    // Wire UI
+    document.getElementById('loadBtn').addEventListener('click', loadData);
+    document.getElementById('loginBtn').addEventListener('click', login);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    document.getElementById('month').addEventListener('change', loadData);
+
+    // Export CSV (uses current month)
+    document.getElementById('exportBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      const m = document.getElementById('month').value.trim();
+      if (!m) { alert("Please select a month before exporting."); return; }
+      const start = `${m}-01`;
+      const end = `${m}-31`;
+      const url = `/api/transactions/export?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'transactions.csv';
+      a.target = '_blank';
+      a.click();
+    });
+
+    // Init
+    setDefaultMonth();
+    if (accessToken()) { USE_MOCK = false; setStatus('Loaded from API.', true); }
+    loadData();
+  </script>
+</body>
+</html>
