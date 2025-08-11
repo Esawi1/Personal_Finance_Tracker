@@ -67,7 +67,7 @@ Copy
 
 ## Screenshots
 
-![Dashboard](screenshot.png)
+![Dashboard Screenshot](https://drive.google.com/uc?export=view&id=1qU_uJh-VSagNeaMKE52qx-gQpXUU6k4y)
 
 
 Edit
